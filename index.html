@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Guardian by Double Geste</title>
+<meta name="description" content="An open-source guardian for WordPress sites. Signed rules block attacks on known plugin flaws while you wait for the fix.">
+<meta property="og:title" content="Guardian by Double Geste">
+<meta property="og:description" content="Attackers move in hours. Plugin updates take weeks. Guardian blocks attacks on known plugin flaws with signed, open-source rules.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5z' fill='%232347D9'/%3E%3C/svg%3E">
+<style>
+/* Layout: one centred column on a light page, with a dark "log" panel as the hero's single bold element.
+   No external fonts, scripts or images: a security product should not call third parties from its own front door. */
+:root {
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --ink: #0E1726;
+  --ink2: #475467;
+  --muted: #667085;
+  --line: #DDE3EA;
+  --accent: #2347D9;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #E8EDFC;
+  --good: #1B7F4B;
+  --term-bg: #0B1220;
+  --term-ink: #D6E0EE;
+  --term-dim: #7F8FA3;
+  --term-ok: #5CCB8F;
+  --term-bad: #F2877F;
+  --f-display: "Avenir Next", "Segoe UI Variable Display", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --f-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0A0F18; --surface: #121A26; --ink: #EAF0F7; --ink2: #A9B6C4; --muted: #8190A0; --line: #243142;
+    --accent: #7E9DFF; --accent-ink: #0A0F18; --accent-soft: #18233F; --good: #5CCB8F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0A0F18; --surface: #121A26; --ink: #EAF0F7; --ink2: #A9B6C4; --muted: #8190A0; --line: #243142;
+  --accent: #7E9DFF; --accent-ink: #0A0F18; --accent-soft: #18233F; --good: #5CCB8F;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.skip { position: absolute; left: -999px; top: 8px; background: var(--accent); color: var(--accent-ink); padding: 8px 14px; border-radius: 8px; z-index: 10; }
+.skip:focus { left: 8px; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--f-display); letter-spacing: -0.02em; line-height: 1.1; margin: 0; text-wrap: balance; }
+h1 { font-size: clamp(36px, 5.4vw, 60px); font-weight: 800; }
+h2 { font-size: clamp(28px, 4vw, 40px); font-weight: 750; }
+h3 { font-size: 19px; font-weight: 700; letter-spacing: -0.01em; }
+p { margin: 0; max-width: 64ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { padding-block: 84px 0; scroll-margin-top: 16px; }
+.lede { font-size: clamp(18px, 2.2vw, 21px); color: var(--ink2); }
+
+/* header */
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 20px; flex-wrap: wrap; }
+.brand { display: inline-flex; align-items: center; gap: 10px; font-family: var(--f-display); font-weight: 800; font-size: 20px; color: var(--ink); text-decoration: none; letter-spacing: -0.02em; }
+.brand svg { width: 26px; height: 26px; fill: var(--accent); }
+nav.main { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; font-size: 15px; }
+nav.main a { color: var(--ink2); text-decoration: none; }
+nav.main a:hover { color: var(--ink); }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: 0 22px; border-radius: 10px; font-weight: 650; font-size: 16px; text-decoration: none; border: 1.5px solid transparent; cursor: pointer; font-family: inherit; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.ghost { border-color: var(--line); color: var(--ink); background: var(--surface); }
+.btn.ghost:hover { border-color: var(--accent); }
+nav.main .btn { min-height: 40px; padding: 0 16px; font-size: 15px; color: var(--accent-ink); }
+
+.notice { background: var(--accent-soft); border: 1px solid var(--line); border-radius: 10px; padding: 10px 16px; font-size: 14.5px; color: var(--ink2); }
+.notice b { color: var(--ink); }
+
+/* hero */
+.hero { padding-block: 56px 0; display: grid; gap: 48px; grid-template-columns: minmax(0, 1fr); align-items: center; }
+@media (min-width: 940px) { .hero { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); } }
+.hero .lede { margin-top: 22px; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 30px; }
+.term { background: var(--term-bg); color: var(--term-ink); border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; box-shadow: 0 24px 60px -30px rgba(14, 23, 38, 0.55); }
+.term .bar { display: flex; gap: 7px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); align-items: center; }
+.term .bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.18); }
+.term .bar span { margin-left: 8px; font-family: var(--f-mono); font-size: 12px; color: var(--term-dim); }
+.term pre { margin: 0; padding: 18px 18px 20px; font-family: var(--f-mono); font-size: 13px; line-height: 1.7; overflow-x: auto; white-space: pre; }
+.term .req { color: var(--term-ink); }
+.term .dim { color: var(--term-dim); }
+.term .ok { color: var(--term-ok); }
+.term .bad { color: var(--term-bad); font-weight: 600; }
+.term .gap { display: block; height: 10px; }
+.caption { font-size: 13px; color: var(--muted); margin-top: 12px; max-width: 56ch; }
+
+/* evidence */
+.facts { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-top: 36px; }
+.fact { border-top: 2px solid var(--ink); padding-top: 14px; }
+.fact b { display: block; font-family: var(--f-display); font-size: 40px; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.fact span { display: block; color: var(--ink2); font-size: 15.5px; margin-top: 6px; }
+.fine { font-size: 13px; color: var(--muted); margin-top: 18px; }
+
+/* steps */
+.steps { list-style: none; padding: 0; margin: 36px 0 0; display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); }
+.steps li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 10px; align-content: start; }
+.steps .n { font-family: var(--f-mono); font-size: 13px; color: var(--accent); font-weight: 600; }
+.steps p { color: var(--ink2); font-size: 16px; }
+
+/* trust grid */
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); margin-top: 36px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 22px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card p { color: var(--ink2); font-size: 16px; }
+code { font-family: var(--f-mono); font-size: 0.88em; background: var(--accent-soft); padding: 1px 6px; border-radius: 5px; overflow-wrap: anywhere; }
+
+/* plans */
+.plans { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-top: 36px; align-items: stretch; }
+.plan { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 24px; display: grid; gap: 14px; align-content: start; }
+.plan.featured { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.plan .price { font-family: var(--f-display); font-size: 32px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.plan .price small { font-size: 14px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.plan .for { color: var(--ink2); font-size: 15px; }
+.plan ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; font-size: 15.5px; }
+.plan li { padding-left: 24px; position: relative; }
+.plan li::before { content: ""; position: absolute; left: 2px; top: 0.55em; width: 11px; height: 6px; border-left: 2px solid var(--good); border-bottom: 2px solid var(--good); transform: rotate(-45deg); }
+.tag { display: inline-block; font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px; width: max-content; }
+
+/* faq */
+.faq { margin-top: 30px; display: grid; gap: 10px; max-width: 800px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0 20px; }
+summary { cursor: pointer; font-weight: 650; padding: 16px 0; list-style: none; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font-size: 22px; color: var(--accent); line-height: 1; }
+details[open] summary::after { content: "\2212"; }
+details p { color: var(--ink2); padding-bottom: 18px; font-size: 16px; }
+
+/* waitlist */
+.waitlist { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: clamp(24px, 5vw, 48px); display: grid; gap: 28px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 880px) { .waitlist { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: center; } }
+form { display: grid; gap: 14px; }
+label { font-size: 14px; font-weight: 600; display: grid; gap: 6px; }
+input[type=email], select { font: inherit; font-size: 16px; min-height: 48px; padding: 0 14px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+input[type=email]:focus, select:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
+.consent { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; font-size: 14px; color: var(--ink2); }
+.consent input { margin-top: 4px; width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+.status { min-height: 1.4em; font-size: 15px; color: var(--ink2); }
+
+footer { margin-top: 96px; border-top: 1px solid var(--line); padding-block: 32px 48px; font-size: 14px; color: var(--muted); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+footer p { max-width: 70ch; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<div class="wrap">
+  <header class="top">
+    <a class="brand" href="#top" aria-label="Guardian home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V5z"/></svg>
+      Guardian
+    </a>
+    <nav class="main" aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#open">Open source</a>
+      <a href="#plans">Plans</a>
+      <a href="#faq">FAQ</a>
+      <a class="btn primary" href="#waitlist">Join the waitlist</a>
+    </nav>
+  </header>
+
+  <p class="notice"><b>Early development.</b> The engine described here is built and tested. There is no public release yet, and nothing is on sale.</p>
+
+  <main id="main">
+    <div class="hero" id="top">
+      <div>
+        <p class="eyebrow">For WordPress sites</p>
+        <h1 style="margin-top:14px">Attackers move in hours. Plugin updates take weeks.</h1>
+        <p class="lede">Guardian is an open-source guardian for WordPress. When a plugin flaw goes public, a signed rule blocks attacks on it right away, so your site is protected while you wait for the fix.</p>
+        <div class="cta">
+          <a class="btn primary" href="#waitlist">Join the waitlist</a>
+          <a class="btn ghost" href="#how">See how it works</a>
+        </div>
+      </div>
+      <figure style="margin:0">
+        <div class="term" role="img" aria-label="Log showing two exploit requests blocked with status 403 and one normal upload allowed">
+          <div class="bar"><i></i><i></i><i></i><span>guardian · request log</span></div>
+<pre><span class="req">POST /wp-admin/admin-ajax.php</span>
+<span class="dim">  action=example_save  file=shell.php</span>
+  <span class="bad">403</span>  <span class="dim">blocked by</span> GRD-2027-0001
+<span class="gap"></span><span class="req">POST //WP-Admin/./admin-ajax.php</span>
+<span class="dim">  action=example_save  file=Shell.PHP.jpg</span>
+  <span class="bad">403</span>  <span class="dim">blocked by</span> GRD-2027-0001
+<span class="dim">  path cleaned up, double extension seen</span>
+<span class="gap"></span><span class="req">POST /wp-admin/admin-ajax.php</span>
+<span class="dim">  action=example_save  file=photo.jpg</span>
+  <span class="ok">200</span>  <span class="dim">allowed</span></pre>
+        </div>
+        <figcaption class="caption">From Guardian's own end-to-end test on a WordPress 7.1.5 site with a deliberately flawed test plugin. Not from a customer site.</figcaption>
+      </figure>
+    </div>
+
+    <section aria-labelledby="why">
+      <p class="eyebrow">Why now</p>
+      <h2 id="why" style="margin-top:12px">The gap between a flaw and a fix is where sites get hacked</h2>
+      <p class="lede" style="margin-top:16px">Most small sites run dozens of plugins from different authors. Each one is a door, and attackers now use automation to find the open ones.</p>
+      <div class="facts">
+        <div class="fact"><b>11,334</b><span>new WordPress vulnerabilities reported in 2025, up 42% on 2024</span></div>
+        <div class="fact"><b>about 91%</b><span>of them were in plugins, not in WordPress itself</span></div>
+        <div class="fact"><b>about half</b><span>of high-impact flaws were exploited within 24 hours</span></div>
+      </div>
+      <p class="fine">Figures reported by Patchstack, as covered in press, for 2025. Vendor reports, so read them as direction, not precision. <a href="https://patchstack.com/whitepaper/state-of-wordpress-security-in-2026/">Patchstack report</a>.</p>
+    </section>
+
+    <section id="how" aria-labelledby="how-h">
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-h" style="margin-top:12px">A narrow rule, checked before it reaches you</h2>
+      <ol class="steps">
+        <li><span class="n">1 · A flaw goes public</span><h3>We write a rule for exactly that plugin and version</h3><p>Not a broad filter that might break your shop. The rule is tested against the exploit and against normal traffic, and a person reviews it.</p></li>
+        <li><span class="n">2 · The rule is signed</span><h3>Your site checks it before installing</h3><p>Guardian verifies the signature, the expiry date and the version number. A fake, stale or replayed update is refused.</p></li>
+        <li><span class="n">3 · Attacks are blocked</span><h3>Everything else passes</h3><p>Only requests that match the rule get a 403. If anything goes wrong inside Guardian, your site keeps working.</p></li>
+      </ol>
+    </section>
+
+    <section id="open" aria-labelledby="open-h">
+      <p class="eyebrow">Open source</p>
+      <h2 id="open-h" style="margin-top:12px">A security plugin you do not have to take on trust</h2>
+      <p class="lede" style="margin-top:16px">The engine that runs on your server is open source, so you, your agency or an auditor can read exactly what it does.</p>
+      <div class="grid">
+        <div class="card"><h3>Rules are data, never code</h3><p>A rule is a small JSON description of a request. It cannot run anything on your server, which also keeps it within WordPress.org's rules.</p></div>
+        <div class="card"><h3>Signed, expiring, no rollbacks</h3><p>Updates carry an Ed25519 signature and an expiry. An older version cannot replace a newer one.</p></div>
+        <div class="card"><h3>Fails open</h3><p>An error inside Guardian lets the request through and logs it. A time budget stops slow rules from slowing your pages.</p></div>
+        <div class="card"><h3>A way out</h3><p>Add one line, <code>define( 'GUARDIAN_SAFE_MODE', true );</code>, or create a file named <code>guardian-disable</code>, and Guardian switches off without touching the database.</p></div>
+        <div class="card"><h3>Your data stays home</h3><p>The free engine sends nothing about your site. Paid plans share only what they need, such as plugin versions and event counts, with truncated IP addresses.</p></div>
+        <div class="card"><h3>Tested in the open</h3><p>135 unit tests and an end-to-end suite against a real WordPress site cover blocking, normal traffic, version scoping, the off switch and uninstall.</p></div>
+      </div>
+    </section>
+
+    <section id="plans" aria-labelledby="plans-h">
+      <p class="eyebrow">Planned plans</p>
+      <h2 id="plans-h" style="margin-top:12px">Free to use, paid for speed and hands-off protection</h2>
+      <p class="lede" style="margin-top:16px">The free plan is a real product, not a trial. You pay for getting rules the moment they ship, and for Guardian doing the routine work for you.</p>
+      <div class="plans">
+        <div class="plan">
+          <span class="tag">Community</span>
+          <div class="price">Free</div>
+          <p class="for">For anyone who wants to read the code and run it.</p>
+          <ul>
+            <li>The full open-source engine</li>
+            <li>Every rule, 7 days after release</li>
+            <li>An immediate warning for flaws being exploited now</li>
+            <li>Nothing about your site leaves it</li>
+          </ul>
+        </div>
+        <div class="plan featured">
+          <span class="tag">Guardian</span>
+          <div class="price">€59 <small>per site, per year</small></div>
+          <p class="for">For shops and sites that cannot wait.</p>
+          <ul>
+            <li>Rules the moment they ship</li>
+            <li>Safe plugin updates with automatic rollback</li>
+            <li>A weekly summary in plain language</li>
+            <li>Priority support</li>
+          </ul>
+        </div>
+        <div class="plan">
+          <span class="tag">Studio</span>
+          <div class="price">from €3 <small>per site, per month</small></div>
+          <p class="for">For freelancers and agencies with ten sites or more.</p>
+          <ul>
+            <li>Everything in Guardian</li>
+            <li>One console for every client site</li>
+            <li>White-label reports</li>
+            <li>Bulk updates</li>
+          </ul>
+        </div>
+      </div>
+      <p class="fine">Planned prices, subject to change. Nothing is on sale yet. A server version for VPS hosting comes after WordPress.</p>
+    </section>
+
+    <section aria-labelledby="who">
+      <p class="eyebrow">Who it is for</p>
+      <h2 id="who" style="margin-top:12px">Built for people who run sites, not security teams</h2>
+      <div class="grid">
+        <div class="card"><h3>Freelancers and small agencies</h3><p>Manage dozens of client sites without chasing every plugin update on every one of them.</p></div>
+        <div class="card"><h3>Shop owners</h3><p>An attack costs you sales. Guardian narrows the window in which a known flaw can be used against you.</p></div>
+        <div class="card"><h3>Self-hosters</h3><p>If you run your own server, the open code and the off switch matter. A VPS version is planned.</p></div>
+      </div>
+    </section>
+
+    <section id="faq" aria-labelledby="faq-h">
+      <p class="eyebrow">Questions</p>
+      <h2 id="faq-h" style="margin-top:12px">Straight answers</h2>
+      <div class="faq">
+        <details><summary>Is it ready to use?</summary><p>No. The engine is built and tested, and the rule service is still to come. Join the waitlist and we will tell you when early access opens. We will not claim more than we have shipped.</p></details>
+        <details><summary>How is it different from Wordfence and similar plugins?</summary><p>They are good products. We are aiming at speed and simplicity. For example, Wordfence says free users get new firewall rules 30 days after paying users. We plan 7 days for the free plan, and paid users get rules immediately. The code is open, and the plugin does little you did not ask for.</p></details>
+        <details><summary>Will it slow my site down?</summary><p>It is built not to. In our first measurement on a test site, loading 200 rules and checking a request took about one millisecond. That was a development setup, so we will publish numbers from a realistic server before launch.</p></details>
+        <details><summary>Is AI involved?</summary><p>Our plan is to use AI upstream, to help us read plugin updates and draft rules, with a person reviewing every rule. AI never runs on your visitors' requests. The checks on your site are fast, fixed rules.</p></details>
+        <details><summary>What if Guardian blocks something it should not?</summary><p>Rules are narrow and tested against normal traffic before release, and we can withdraw a rule everywhere within minutes. You can also add a one-line setting, or create a file, to switch Guardian off immediately.</p></details>
+        <details><summary>Where will my data be?</summary><p>We plan to host in the EU. The free engine sends no data about your site. We will publish exactly what the paid plans send, and why, before launch.</p></details>
+        <details><summary>Guardian is a working name. Will it change?</summary><p>Possibly. We still have to check the trademark.</p></details>
+      </div>
+    </section>
+
+    <section id="waitlist" aria-labelledby="wl-h">
+      <div class="waitlist">
+        <div>
+          <p class="eyebrow">Early access</p>
+          <h2 id="wl-h" style="margin-top:12px">Get told when it opens</h2>
+          <p class="lede" style="margin-top:16px">One email when early access starts, and one if something big changes. Nothing else.</p>
+        </div>
+        <form id="wl-form" novalidate>
+          <label for="wl-email">Email
+            <input id="wl-email" name="email" type="email" autocomplete="email" required placeholder="you@example.com">
+          </label>
+          <label for="wl-role">What best describes you?
+            <select id="wl-role" name="role" required>
+              <option value="">Choose one</option>
+              <option value="agency">Freelancer or agency</option>
+              <option value="shop">Shop or site owner</option>
+              <option value="selfhost">I run my own server</option>
+              <option value="other">Something else</option>
+            </select>
+          </label>
+          <label class="consent" for="wl-consent">
+            <input id="wl-consent" name="consent" type="checkbox" required>
+            <span>I agree to receive emails about Guardian's launch. I can unsubscribe at any time.</span>
+          </label>
+          <button class="btn primary" type="submit">Join the waitlist</button>
+          <p class="status" id="wl-status" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Guardian is a working name. Built by Double Geste. Early development: features and prices described here are plans, and may change.</p>
+    <p>© 2026 Double Geste</p>
+  </footer>
+</div>
+
+<script>
+// Set this to the address of your form service (for example Formspree or Buttondown) or your own endpoint.
+// It receives a JSON POST: { "email": "...", "role": "..." }. Until it is set, the form explains that the waitlist is not open.
+// Remember to mention the service in your privacy policy.
+var WAITLIST_ENDPOINT = "";
+
+(function () {
+  var form = document.getElementById('wl-form');
+  var status = document.getElementById('wl-status');
+  form.addEventListener('submit', function (event) {
+    event.preventDefault();
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    if (!WAITLIST_ENDPOINT) {
+      status.textContent = 'The waitlist is not open yet. Please check back soon.';
+      return;
+    }
+    status.textContent = 'Sending…';
+    fetch(WAITLIST_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ email: form.email.value, role: form.role.value })
+    }).then(function (response) {
+      if (!response.ok) { throw new Error('bad response'); }
+      form.reset();
+      status.textContent = 'Thanks. You are on the list.';
+    }).catch(function () {
+      status.textContent = 'Something went wrong. Please try again.';
+    });
+  });
+})();
+</script>
+</body>
+</html>
